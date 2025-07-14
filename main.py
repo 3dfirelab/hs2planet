@@ -44,7 +44,7 @@ if __name__ == '__main__':
     domain =  [-10,35,20,52] # lonmin,latmin, lonmax, latmax
     bbox = box(*domain)  # box(minx, miny, maxx, maxy)
     radius_km = 2.0
-    time_update = 600 # in second
+    time_update = 600. # in second
     srcDir = os.path.dirname(__file__)
     subprocess.run([f"{srcDir}/mount_aeris.sh"], check=True)
 
