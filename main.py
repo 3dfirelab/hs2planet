@@ -40,7 +40,7 @@ def extract_datetime_from_filename(f):
 if __name__ == '__main__':
 
     
-    dir_hs = '/home/paugam/AERIS/FCI/hotspots/'
+    dir_hs = f"{os.environ['HOME']}/AERIS/FCI/hotspots/"
     domain =  [-10,35,20,52] # lonmin,latmin, lonmax, latmax
     bbox = box(*domain)  # box(minx, miny, maxx, maxy)
     radius_km = 0.6
