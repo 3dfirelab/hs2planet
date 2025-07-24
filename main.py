@@ -43,7 +43,7 @@ if __name__ == '__main__':
     dir_hs = '/home/paugam/AERIS/FCI/hotspots/'
     domain =  [-10,35,20,52] # lonmin,latmin, lonmax, latmax
     bbox = box(*domain)  # box(minx, miny, maxx, maxy)
-    radius_km = 2.0
+    radius_km = 0.6
     time_update = 600. # in second
     srcDir = os.path.dirname(__file__)
     subprocess.run([f"{srcDir}/mount_aeris.sh"], check=True)
@@ -83,6 +83,10 @@ if __name__ == '__main__':
                     deltatime = (last_time - latest_datetime).total_seconds()/3600
                 else:
                     deltatime = 1.e6
+    
+            else:
+                continue
+                sys.exit()
 
             if (deltatime > deltatime_ref) | (ii==0):
                 #update hs data
@@ -133,7 +137,18 @@ if __name__ == '__main__':
                         }
                     }
 
-                    wrapped_feature = {"feature": feature}
+                    circle_data_json = {
+                            "type":"Feature",
+                            "geometry":mapping(point),
+                            "properties":{
+                                "radius":radius_km,
+                                "group":"hotspots MTG",
+                                "color":"#ff0000",
+                                "time UTC": latest_datetime.strftime('%Y-%m-%d %H:%M'),
+                                }
+                            }
+                    
+                    wrapped_feature = {"feature": circle_data_json}
                     time_hs = time.time()
 
                     # Add to Planete API
@@ -150,7 +165,7 @@ if __name__ == '__main__':
             time.sleep(time_update)
             subprocess.run([f"{srcDir}/mount_aeris.sh"], check=True)
 
-            id_to_remove = np.where(np.array(geomarker_time) < geomarker_time[-1])[0] #keep last 15min
+            id_to_remove = np.where(np.array(geomarker_time) < geomarker_time[-1])[0] #keep last 10min
             for ii in id_to_remove:
                 planete_api.delete_geomarker(ip_server_planete, mission_id, token, geomarker_id[ii])
                 del geomarker_id[ii]

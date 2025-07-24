@@ -1,4 +1,2 @@
-source ~/.myKeys.sh
-source ~/miniforge3/bin/activate tracking
-
-python main.py
+source ~/.myKeys.sh 
+python3 main.py
