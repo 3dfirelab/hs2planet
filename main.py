@@ -44,7 +44,7 @@ if __name__ == '__main__':
     domain =  [-10,35,20,52] # lonmin,latmin, lonmax, latmax
     bbox = box(*domain)  # box(minx, miny, maxx, maxy)
     radius_km = 0.6
-    time_update = 600. # in second
+    time_update = 300. # in second
     srcDir = os.path.dirname(__file__)
     subprocess.run([f"{srcDir}/mount_aeris.sh"], check=True)
 
@@ -71,29 +71,31 @@ if __name__ == '__main__':
             latest_file = files_sorted[-1] if files_sorted else None
             if latest_file:
                 latest_datetime = extract_datetime_from_filename(latest_file)
-                print("Latest tle file used:", latest_file)
+                print("Latest hs file used:", os.path.basename(latest_file), end = '')
+                sys.stdout.flush()
                 flag_hs = 'found' 
             else:
                flag_hs = 'nodata' 
-            
-            deltatime_ref = 1100 # 20 min
+           
+            deltatime_ref = 590 # 20 min
             
             if flag_hs == 'found':
                 if ii > 0:
-                    deltatime = (last_time - latest_datetime).total_seconds()/3600
+                    deltatime = (latest_datetime - last_time).total_seconds()
                 else:
                     deltatime = 1.e6
     
             else:
                 continue
-                sys.exit()
-
+            
+            #print(deltatime)
+            
             if (deltatime > deltatime_ref) | (ii==0):
                 #update hs data
                 hs_data = pd.read_csv(latest_file, delimiter=',', header=0)
                 last_time = latest_datetime
             else:
-                print('waiting for new hs file')
+                print(' ... waiting ')
                 time.sleep(time_update)
                 subprocess.run([f"{srcDir}/mount_aeris.sh"], check=True)
                 continue
@@ -107,7 +109,7 @@ if __name__ == '__main__':
             # Clip the GeoDataFrame
             gdf_clipped = gpd.clip(gdf, bbox)
           
-            print(f"found {len(gdf_clipped)} hs in SILEX domain and send to planet")
+            #print(f"****** found {len(gdf_clipped)} hs in SILEX domain and send to planet")
             for idx, row in gdf_clipped.iterrows():
                 try:
                     lon, lat = row.geometry.x, row.geometry.y
@@ -157,19 +159,27 @@ if __name__ == '__main__':
                     geomarker_time.append(latest_datetime)
 
                 except TopologicalError as e:
+                    print('')
                     print(f"Geometry error at index {idx}: {e}")
                 except Exception as e:
+                    print('')
                     print(f"Unexpected error at index {idx}: {e}")
-           
+          
             ii += 1 
-            time.sleep(time_update)
-            subprocess.run([f"{srcDir}/mount_aeris.sh"], check=True)
 
             id_to_remove = np.where(np.array(geomarker_time) < geomarker_time[-1])[0] #keep last 10min
-            for ii in id_to_remove:
-                planete_api.delete_geomarker(ip_server_planete, mission_id, token, geomarker_id[ii])
-                del geomarker_id[ii]
+            print(f" rm {len(id_to_remove)} hs -- ", end='')
+            if len(id_to_remove)>0:
+                for ii in id_to_remove:
+                    planete_api.delete_geomarker(ip_server_planete, mission_id, token, geomarker_id[ii])
+                    #del geomarker_id[ii]
+                    #del geomarker_time[ii]
             
+            print(f" {len(gdf_clipped)} hs" + u'   \u2714')
+            sys.stdout.flush()
+            
+            time.sleep(time_update)
+            subprocess.run([f"{srcDir}/mount_aeris.sh"], check=True)
 
     except KeyboardInterrupt:
         for idx in geomarker_id:
