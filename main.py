@@ -144,6 +144,7 @@ if __name__ == '__main__':
                             "geometry":mapping(point),
                             "properties":{
                                 "radius":radius_km,
+                                "FRP (MW)": row['FRP'],
                                 "group":"hotspots MTG",
                                 "color":"#ff0000",
                                 "time UTC": latest_datetime.strftime('%Y-%m-%d %H:%M'),
